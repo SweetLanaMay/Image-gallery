@@ -1,41 +1,55 @@
 import throttle from 'lodash.throttle';
 
 const form = document.querySelector('.feedback-form');
-const input = document.querySelector('[name="email"]');
-const message = document.querySelector('[name="message"]');
+const email = form.querySelector('input[name="email"]');
+const message = form.querySelector('textarea[name="message"]');
 
-const saveFormData = () => {
+const localStorageKey = 'feedback-form-state';
+
+const saveFormData = throttle(() => {
   const formData = {
-    email: input.value,
+    email: email.value,
     message: message.value,
   };
-  localStorage.setItem('feedback-form-state', JSON.stringify(formData));
-};
 
-const restoreFormData = () => {
-  const savedData = localStorage.getItem('feedback-form-state');
+  localStorage.setItem(localStorageKey, JSON.stringify(formData));
+}, 500);
+
+const loadFormData = () => {
+  const savedData = localStorage.getItem(localStorageKey);
+
   if (savedData) {
     const formData = JSON.parse(savedData);
-    input.value = formData.email;
+    email.value = formData.email;
     message.value = formData.message;
   }
 };
 
-const throttledSaveFormData = throttle(saveFormData, 500);
+const handleInput = () => {
+  saveFormData();
+};
 
-form.addEventListener('input', throttledSaveFormData);
-
-restoreFormData();
-
-form.addEventListener('submit', event => {
+const handleSubmit = event => {
   event.preventDefault();
 
-  localStorage.removeItem('feedback-form-state');
-
-  event.target.reset();
-
-  console.log({
-    email: input.value,
+  const formData = {
+    email: email.value,
     message: message.value,
-  });
-});
+  };
+  console.log(formData);
+
+  if (email.value === '' || message.value === '') {
+    alert('Заповніть всі поля!');
+    return;
+  }
+
+  localStorage.removeItem(localStorageKey);
+  email.value = '';
+  message.value = '';
+};
+
+email.addEventListener('input', handleInput);
+message.addEventListener('input', handleInput);
+form.addEventListener('submit', handleSubmit);
+
+loadFormData();
